@@ -74,17 +74,17 @@ If you start the server as `root` but then later try to run it as the `minecraft
 
 #### Generate the game files
 
-You are going to temporarily start the server, so that you are prompted to accept the EULA and it creates the necessary config files:
+You are going to temporarily start the server so that you are prompted to accept the EULA, and so the game can create the necessary config files:
 
 `$ cd /opt/minecraft/server && java -Xmx256M -Xms2048M -jar server.jar nogui`
 
-Once you've accepted the EULA, it will start.  Once you see a message that includes `[Server thread/INFO]: Done`, you'll know you've done it right.
+Once you've accepted the EULA, the server should start.  Once you see a message that includes `[Server thread/INFO]: Done`, you'll know you've done it right.
 
 At this point, type `stop` to shut it down gracefully.  You should now have a directory full of files, including `server.properties`, `whitelist.json`, `banned-ips.json`, `banned-players.json`, and `ops.json`.
 
 #### Edit `server.properties`
 
-In your text editor, open `server.properties`.  This is where you choose the difficult level, the game mode, etc.  Choose whatever settings you like.  However, please pay attention to these ones:
+In your text editor, open `server.properties`.  This is where you choose the difficulty level, the game mode, etc.  Edit [whatever settings you like](https://minecraft.gamepedia.com/Server.properties).  However, please pay attention to these ones:
 
 ```
 white-list=true
@@ -102,7 +102,7 @@ Copy [this script](minecraft\@.service) into `/etc/systemd/system/`
 
 #### Install mcrcon
 
-`mcrcon` is a utility for managing Minecraft servers.
+`mcrcon` is a utility for managing Minecraft servers.  Here's how you install it:
 
 ```
 $ cd /opt/minecraft
@@ -130,9 +130,9 @@ $ sudo systemctl start minecraft@server
 
 Remember when you set `server-ip` and `server-port` in `server.properties`?  You need those now.
 
-Start up Minecraft Java Edition, go to Multiplayer and add a new server.  You can call it whatever you want, but the address will be: `<server-ip>:<server-port>` (but with `<server-ip>` and `<server-port>` replaced with what you set in `server.properties` for that game).
+Start up Minecraft Java Edition, go to Multiplayer and add a new server.  The address will be: `<server-ip>:<server-port>` (matching what you set in `server.properties` for that game).
 
-If you can connect, congratulations, you're done!
+If you can connect, congratulations, your server is running!  Now you need to make it available to the rest of the world.
 
 #### Make it a permanent service
 
@@ -150,6 +150,8 @@ Copy and paste these lines into the crontab:
 0 8 * * * systemctl start minecraft@server
 0 20 * * * systemctl stop minecraft@server
 ```
+
+Save the new crontab (and your sanity in the process).
 
 #### Set up dynamic DNS
 
@@ -179,15 +181,29 @@ This allows you to [run commands](https://minecraft.gamepedia.com/index.php?titl
 
 The beauty of this approach is that it scales easily.  To add a second server, do the following:
 
-1. Make a copy of your server: `cp -r /opt/minecraft/server /opt/minecraft/second_server`
+1. Make a copy of your server:
+
+   `cp -r /opt/minecraft/server /opt/minecraft/second_server`
+
 1. Delete the game directory from the copy (it's in `server.properties`, look for `level-name`)
+
 1. Edit `server-port` and `rcon.port` in `/opt/minecraft/second_server/server.properties` to be something different.
+
 1. Add the new values into `/etc/mcrcon.conf` (e.g., `second_server=<rcon.port>`)
-1. Start the new server: `sudo systemctl start minecraft@second_server`
-1. Ensure the new server starts when the system starts: `sudo systemctl enable minecraft@second_server`
+
+1. Start the new server:
+
+   `sudo systemctl start minecraft@second_server`
+
+1. Ensure the new server starts when the system starts:
+
+   `sudo systemctl enable minecraft@second_server`
+
 1. Add another firewall rule opening the new `server-port`
 
-If you want to keep your operators, players, and banned players the same across the games, you can symlink them.  For example, if you have `/opt/minecraft/server` and `/opt/minecraft/second_server`:
+If you want to keep your operators, players, and banned players the same across the games, you can symlink them.
+
+For example, if you have `/opt/minecraft/server` and `/opt/minecraft/second_server`:
 
 ```
 $ sudo systemctl stop minecraft@second_server
@@ -198,7 +214,6 @@ $ ln -s ../server/whitelist.json
 $ ln -s ../server/banned-players.json
 $ ln -s ../server/banned-ips.json
 $ sudo systemctl start minecraft@second_server
-
 ```
 
 When you change these files, you'll need to restart the servers with symlink'd configs so they pick up the change.
