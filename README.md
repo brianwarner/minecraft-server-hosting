@@ -98,7 +98,7 @@ rcon.password=<an admin password you choose, same for each game>
 
 #### Set up your systemd file
 
-Copy [this script](minecraft\@.service) into `/etc/systemd/system/`
+Copy [minecraft@.service](minecraft\@.service) into `/etc/systemd/system/`
 
 #### Install mcrcon
 
