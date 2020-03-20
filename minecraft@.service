@@ -1,0 +1,78 @@
+# Copyright Brian Warner
+#
+# SPDX-License-Identifier: MIT
+
+# This is a systemd unit which makes it easier to start/stop Minecraft servers.
+#
+# Thanks to @agowa883 who wrote the MIT-licensed script this is based upon (I
+# think): https://github.com/agowa338/MinecraftSystemdUnit
+#
+# Instructions: # https://github.com/brianwarner/minecraft-server-hosting
+#
+
+[Unit]
+Description=Minecraft server - %i
+After=local-fs.target network.target
+
+[Service]
+User=minecraft
+Group=minecraft
+UMask=0027
+
+EnvironmentFile=/etc/mcrcon.conf
+KillMode=none
+SuccessExitStatus=0 1
+
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+
+WorkingDirectory=/opt/minecraft/%i
+ExecStart=/usr/bin/java -server -Xms256M -Xmx1G -XX:+UseG1GC -XX:+CMSIncrementalPacing -XX:+CMSClassUnloadingEnabled -XX:ParallelGCThreads=2 -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -jar -Dgame=%i server.jar nogui
+ExecStop=/usr/local/bin/mcrcon -P ${%i} -H ${SERVER_IP} -p ${RCON_PASSWD} stop
+
+[Install]
+WantedBy=multi-user.target
+
+# Copy this file to /etc/systemd/system/
+#
+# Create a new directory in /opt/minecraft to hold each game. In this example:
+#   /opt/minecraft/serverdirectory1
+#   /opt/minecraft/serverdirectory2
+#   ...
+#
+# Rename Minecraft .jar to server.jar
+#
+# Start a game in each directory to create all necessary files, and accept the EULA
+#
+# In each directory, modify server.properties:
+#   server-ip=<your server's IP>
+#   server-port=<your game's port, unique for each game>
+#   enable-rcon=true
+#	rcon.port=<a unique port for each game, NOT same as server-port>
+#   rcon.password=<an admin password you choose, same for each game>
+#
+# Install mcrcon:
+#  $ cd /opt/minecraft
+#  $ git clone https://github.com/Tiiffi/mcrcon
+#  $ cd mcrcon
+#  $ gcc -std=gnu11 -pedantic -Wall -Wextra -O2 -s -o mcrcon mcrcon.c
+#  $ sudo cp mcrcon /bin/bash/mcrcon
+#
+# Create /etc/mcrcon.conf
+#   RCON_PASSWD=(password you set in server.properties)
+#   SERVER_IP=(IP address of this server)
+#   <serverdirectory1>=<rcon.port from serverdirectory1/server.properties>
+#   <serverdirectory2>=<rcon.port from serverdirectory2/server.properties>
+#   ...
+# Note that <serverdirectory> is case-sensitive, and relative to /opt/minecraft.
+#
+# Enable the service:
+#  $ sudo systemctl enable minecraft@serverdirectory1
+#  $ sudo systemctl enable minecraft@serverdirectory2
+#
+# Configure your client to connect to each game server:
+#   Server Name = Something that refers to your game
+#   Server Address = <your server's IP>:<your game's port>
