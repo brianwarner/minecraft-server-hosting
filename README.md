@@ -37,15 +37,19 @@ In these instructions I'm assuming you're running Debian.  They probably work fo
 
 #### Configure the server
 
-First, install [Oracle Java](https://www.oracle.com/java/technologies/javase-downloads.html).  I suggest the Server JRE.  Datastax has a [good tutorial](https://docs.datastax.com/en/jdk-install/doc/jdk-install/installOracleJdkDeb.html) for how to do this.
+First, install Java:
 
+```
+sudo apt-get install default-jre-headless
+```
+
+ 
 When you're done, running `java -version` should give you something like this:
 
 ```
-java version "1.8.x_xxx"
-Java(TM) SE Runtime Environment (build 1.8.x_xxx-xxx)
-Java HotSpot(TM) 64-Bit Server VM (build xx.xxx-xxx, mixed mode)
-
+openjdk version "..." 202x-xx-xx
+OpenJDK Runtime Environment (build ...)
+OpenJDK 64-Bit Server VM (build ..., mixed mode, sharing)
 ```
 
 #### Create a separate Minecraft user
@@ -58,7 +62,12 @@ On the server, run:
 
 Download the server from [https://www.minecraft.net/en-us/download/server/](https://www.minecraft.net/en-us/download/server/).
 
-Move the downloaded `.jar` file to `/opt/minecraft/server/server.jar`
+Move the downloaded `server.jar` file to `/opt/minecraft/server/server.jar`
+
+```
+$ sudo mkdir /opt/minecraft/server
+$ sudo mv server.jar /opt/minecraft/server/`
+```
 
 #### Fix up the permissions
 
@@ -70,15 +79,20 @@ Make sure permissions are ok:
 
 If you start the server as `root` but then later try to run it as the `minecraft` user, it will give you hard-to-diagnose errors (personal experience).  Switch to the `minecraft` user for the next part:
 
-`$ su minecraft`
+`$ sudo su minecraft`
 
 #### Generate the game files
 
 You are going to temporarily start the server so that you are prompted to accept the EULA, and so the game can create the necessary config files:
 
-`$ cd /opt/minecraft/server && java -Xmx256M -Xms2048M -jar server.jar nogui`
+```
+$ cd /opt/minecraft/server
+$ java -Xmx2048M -Xms256M -jar server.jar nogui
+```
 
-Once you've accepted the EULA, the server should start.  Once you see a message that includes `[Server thread/INFO]: Done`, you'll know you've done it right.
+It will say you haven't agreed to the EULA.  Edit `eula.txt` (which now appears in the directory with `server.jar`) and set `eula=true`, and then try again.
+
+Once you've accepted the EULA, the server should start.  When you see a message that includes `[Server thread/INFO]: Done`, you'll know you've done it right.
 
 At this point, type `stop` to shut it down gracefully.  You should now have a directory full of files, including `server.properties`, `whitelist.json`, `banned-ips.json`, `banned-players.json`, and `ops.json`.
 
@@ -89,10 +103,10 @@ In your text editor, open `server.properties`.  This is where you choose the dif
 ```
 white-list=true
 pvp=false				# your call on this, but this definitely helps keep the peace...
-server-ip=<your server's IP>
-server-port=<your game's port, unique for each game>
+server-ip=<your server's IP> # Change this to match your server's IP
+server-port=<your game's port, unique for each game> # Change this from the default
 enable-rcon=true
-rcon.port=<a unique port for each game, NOT same as server-port>
+rcon.port=<a unique port for each game, NOT same as server-port> # Change this from the default, but different from server-port
 rcon.password=<an admin password you choose, same for each game>
 ```
 
@@ -105,11 +119,12 @@ Copy [minecraft@.service](minecraft\@.service) into `/etc/systemd/system/`
 `mcrcon` is a utility for managing Minecraft servers.  Here's how you install it:
 
 ```
+$ sudo apt-get install gcc git
 $ cd /opt/minecraft
 $ git clone https://github.com/Tiiffi/mcrcon
 $ cd mcrcon
-$ gcc -std=gnu11 -pedantic -Wall -Wextra -O2 -s -o mcrcon mcrcon.c
-$ sudo cp mcrcon /bin/bash/mcrcon
+$ make
+$ sudo make install
 ```
 
 #### Configure mcrcon
@@ -185,9 +200,9 @@ The beauty of this approach is that it scales easily.  To add a second server, d
 
    `cp -r /opt/minecraft/server /opt/minecraft/second_server`
 
-1. Delete the game directory from the copy (it's in `server.properties`, look for `level-name`)
+1. Delete the game directory from the copy. It's in `server.properties`, look for `level-name=` and delete that subdirectory. This causes the server to generate a new game upon restart.
 
-1. Edit `server-port` and `rcon.port` in `/opt/minecraft/second_server/server.properties` to be something different.
+1. Edit `server-port` and `rcon.port` in `/opt/minecraft/second_server/server.properties` to be something different from that in `server`.
 
 1. Add the new values into `/etc/mcrcon.conf` (e.g., `second_server=<rcon.port>`)
 

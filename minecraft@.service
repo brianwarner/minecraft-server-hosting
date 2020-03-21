@@ -30,7 +30,7 @@ ProtectHome=true
 ProtectSystem=full
 
 WorkingDirectory=/opt/minecraft/%i
-ExecStart=/usr/bin/java -server -Xms256M -Xmx1G -XX:+UseG1GC -XX:+CMSIncrementalPacing -XX:+CMSClassUnloadingEnabled -XX:ParallelGCThreads=2 -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -jar -Dgame=%i server.jar nogui
+ExecStart=/usr/bin/java -server -Xms256M -Xmx1G -XX:+UseG1GC -XX:+CMSClassUnloadingEnabled -XX:ParallelGCThreads=2 -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -jar -Dgame=%i server.jar nogui
 ExecStop=/usr/local/bin/mcrcon -P ${%i} -H ${SERVER_IP} -p ${RCON_PASSWD} stop
 
 [Install]
@@ -58,8 +58,8 @@ WantedBy=multi-user.target
 #  $ cd /opt/minecraft
 #  $ git clone https://github.com/Tiiffi/mcrcon
 #  $ cd mcrcon
-#  $ gcc -std=gnu11 -pedantic -Wall -Wextra -O2 -s -o mcrcon mcrcon.c
-#  $ sudo cp mcrcon /bin/bash/mcrcon
+#  $ make
+#  $ sudo make install
 #
 # Create /etc/mcrcon.conf
 #   RCON_PASSWD=(password you set in server.properties)
