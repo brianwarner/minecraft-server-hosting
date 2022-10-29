@@ -40,10 +40,10 @@ In these instructions I'm assuming you're running Debian.  They probably work fo
 First, install Java:
 
 ```
-sudo apt-get install default-jre-headless
+sudo apt-get install openjdk-17-jdk-headless
 ```
 
- 
+
 When you're done, running `java -version` should give you something like this:
 
 ```
@@ -54,7 +54,7 @@ OpenJDK 64-Bit Server VM (build ..., mixed mode, sharing)
 
 #### Create a separate Minecraft user
 
-On the server, run: 
+On the server, run:
 
 `$ sudo adduser --system --shell /bin/bash --home /opt/minecraft --group minecraft`
 
@@ -66,7 +66,7 @@ Move the downloaded `server.jar` file to `/opt/minecraft/server/server.jar`
 
 ```
 $ sudo mkdir /opt/minecraft/server
-$ sudo mv server.jar /opt/minecraft/server/`
+$ sudo mv server.jar /opt/minecraft/server/
 ```
 
 #### Fix up the permissions
@@ -119,7 +119,7 @@ Copy [minecraft@.service](minecraft\@.service) into `/etc/systemd/system/`
 `mcrcon` is a utility for managing Minecraft servers.  Here's how you install it:
 
 ```
-$ sudo apt-get install gcc git
+$ sudo apt-get install gcc git make
 $ cd /opt/minecraft
 $ git clone https://github.com/Tiiffi/mcrcon
 $ cd mcrcon
