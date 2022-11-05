@@ -30,7 +30,7 @@ ProtectHome=true
 ProtectSystem=full
 
 WorkingDirectory=/opt/minecraft/%i
-ExecStart=/usr/bin/java -server -Xms256M -Xmx1G -XX:+UseG1GC -XX:ParallelGCThreads=2 -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -jar -Dgame=%i server.jar nogui
+ExecStart=/usr/bin/java -server -Xms256M -Xmx2G -XX:+UseG1GC -XX:ParallelGCThreads=2 -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -jar -Dgame=%i server.jar nogui
 ExecStop=/usr/local/bin/mcrcon -P ${%i} -H ${SERVER_IP} -p ${RCON_PASSWD} stop
 
 [Install]
