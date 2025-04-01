@@ -40,7 +40,7 @@ In these instructions I'm assuming you're running Debian.  They probably work fo
 First, install Java:
 
 ```
-sudo apt-get install openjdk-17-jdk-headless
+sudo apt-get install openjdk-21-jdk-headless
 ```
 
 
