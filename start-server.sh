@@ -1,9 +1,12 @@
 #!/bin/bash
 
-#!/bin/bash
-
 # Always create/update server.properties from environment variables
 echo "Creating server.properties from environment variables..."
+
+# Prepare MOTD with port number
+MOTD_VALUE="${MOTD:-A Minecraft Server}"
+MOTD_VALUE+=" (port ${SERVER_PORT:-25565})"
+
 cat > server.properties << EOF
 # Network settings
 server-port=${SERVER_PORT:-25565}
@@ -52,7 +55,7 @@ sync-chunk-writes=${SYNC_CHUNK_WRITES:-true}
 use-native-transport=${USE_NATIVE_TRANSPORT:-true}
 
 # Server behavior
-motd=${MOTD:-A Minecraft Server}
+motd=$MOTD_VALUE
 enable-status=${ENABLE_STATUS:-true}
 enable-command-block=${ENABLE_COMMAND_BLOCK:-false}
 enable-jmx-monitoring=${ENABLE_JMX_MONITORING:-false}
