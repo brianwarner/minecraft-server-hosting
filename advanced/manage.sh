@@ -9,12 +9,7 @@
 #
 # mcrcon: https://github.com/Tiiffi/mcrcon
 #
-# Copy this script into your server directory (e.g., /opt/minecraft/server/) and
-# run it:
-#   $ ./manage.sh
-#
-# Instructions: # https://github.com/brianwarner/minecraft-server-hosting
-#
+# Usage instructions: See README.md
 
 mcrcon -P `cat server.properties | grep rcon.port | sed 's/.*=//'` \
 	-p `cat server.properties | grep rcon.password | sed 's/.*=//'` \

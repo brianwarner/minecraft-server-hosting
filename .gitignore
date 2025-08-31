@@ -1,3 +1,25 @@
+# Editor temporary files
 *.swp
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# Minecraft server files
+server.jar
+*.tar.gz
+
+# Docker environment and data
+.env*
+!.env.example
+
+# Backup files
+minecraft-backup-*
+
+# Logs
+*.log
+
+# IDE files
+.vscode/
+.idea/
 

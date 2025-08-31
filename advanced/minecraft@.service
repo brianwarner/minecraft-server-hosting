@@ -1,0 +1,36 @@
+# Copyright Brian Warner
+#
+# SPDX-License-Identifier: MIT
+
+# This is a systemd unit which makes it easier to start/stop Minecraft servers.
+#
+# Thanks to @agowa883 who wrote the MIT-licensed script this is based upon (I
+# think): https://github.com/agowa338/MinecraftSystemdUnit
+#
+# Setup instructions: See README.md in this directory
+
+[Unit]
+Description=Minecraft server - %i
+After=local-fs.target network.target
+
+[Service]
+User=minecraft
+Group=minecraft
+UMask=0027
+
+EnvironmentFile=/etc/mcrcon.conf
+KillMode=none
+SuccessExitStatus=0 1
+
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+
+WorkingDirectory=/opt/minecraft/%i
+ExecStart=/usr/bin/java -server -Xms256M -Xmx2G -XX:+UseG1GC -XX:ParallelGCThreads=2 -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -jar server.jar nogui
+ExecStop=/usr/local/bin/mcrcon -P ${%i} -H localhost -p ${RCON_PASSWD} stop
+
+[Install]
+WantedBy=multi-user.target

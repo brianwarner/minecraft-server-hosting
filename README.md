@@ -1,250 +1,432 @@
-# Server hosting
+# Minecraft Server Hosting
 
-This repo contains scripts and instructions for self-hosting a Minecraft Java Edition server.  It has been merged together from a variety of sources, with a big thanks in particular to the person who originally wrote the systemd script (I think it was [@agowa883](https://github.com/agowa338/MinecraftSystemdUnit/)), but there are also many others out there.
+This is the easiest way to run your own Minecraft server! Perfect for hosting survival worlds, creative builds, or mini-game servers for your friends and family.
 
-One thing to note about this setup is that it doesn't use `screen`, and instead uses [mcrcon](https://github.com/Tiiffi/mcrcon).  This way you can log in using the [manage.sh](manage.sh) script.
+**Who this is for:** Anyone who wants to run Minecraft servers without dealing with complex technical setup.
 
-## What can I do with this?
+**Note:** These instructions are for [Minecraft Java Edition](https://www.minecraft.net/en-us/store/minecraft-java-edition/) only. At the time of writing, there are no options to self-host Minecraft Bedrock Edition.
 
-These instructions help you run a (free) self-hosted multiplayer Minecraft server.  Please note that these instructions are for [Minecraft Java Edition](https://www.minecraft.net/en-us/store/minecraft-java-edition/) only.  At the time of writing, there are no options to self-host Minecraft Bedrock Edition.
+## What You Get
 
-You would want to follow these instructions if you want to set up a private Minecraft server for you or your kids and their friends.
+- 🌍 **Instant Minecraft Worlds:** Create new survival or creative worlds in minutes
+- 🔄 **Always Up-to-Date:** Automatically uses the latest Minecraft server version
+- 🎮 **Multiple Worlds:** Run different worlds simultaneously (survival, creative, mini-games)
+- 🛡️ **Safe & Isolated:** Each world runs independently and securely
+- 🌐 **Friends Can Join:** Accessible to anyone on your local network
+- � **Easy Management:** Simple commands to create, start, stop, and backup worlds
+- 💾 **World Persistence:** Your builds and progress are automatically saved
 
 ## Prerequisites
 
-It's fun (and sometimes reassuring) to run your own server, but there are a few things you need to know up front to make use of these instructions.
+- **Docker Desktop** installed on your computer
+  - [Download for Windows](https://docs.docker.com/desktop/install/windows-install/)
+  - [Download for Mac](https://docs.docker.com/desktop/install/mac-install/)
+  - [Download for Linux](https://docs.docker.com/desktop/install/linux-install/)
+- **Basic comfort with command line**
+- **Router access** (optional, for internet access)
 
-1. You need a working knowledge of command-line Linux (these instructions are geared toward Debian)
-1. You need to be able to open up ports in your firewall
-1. You need root access to your server
-1. You either need a static IP, or Dynamic DNS
+## How to Start a Default Survival World
 
-You probably want to run your own server, as Minecraft can be CPU and memory intensive.
+The fastest way to get a standard survival world running:
 
-## Setup
+1. **Create your world settings:**
 
-### Set up a website for the parents
+   ```bash
+   cp .env.example .env
+   ```
 
-It's a lot easier to get people involved if you can point them to a how-to.  I wrote my own and host it from the same system that runs the Minecraft server.
+2. **Start your world:**
 
-It helps answer the question of what they need to buy, and lays down some ground rules.
+   ```bash
+   docker-compose up -d
+   ```
 
-[Here's a basic site](website.html) you can reuse.
+3. **That's it!** Your survival world is now running and accessible at:
+   - **Local network:** `<your-computer-ip>:25565`
+   - **Same computer:** `localhost:25565`
 
-### Set up the server to host the game
+Your world will have:
 
-In these instructions I'm assuming you're running Debian.  They probably work for other variants of Linux which run systemd.
+- Difficulty: Easy
+- Game mode: Survival  
+- PvP: Disabled (friendly for families)
+- Max players: 20
+- World name: "world"
 
-#### Configure the server
+## How to Stop a World
 
-First, install Java:
-
-```
-sudo apt-get install openjdk-21-jdk-headless
-```
-
-
-When you're done, running `java -version` should give you something like this:
-
-```
-openjdk version "..." 202x-xx-xx
-OpenJDK Runtime Environment (build ...)
-OpenJDK 64-Bit Server VM (build ..., mixed mode, sharing)
-```
-
-#### Create a separate Minecraft user
-
-On the server, run:
-
-`$ sudo adduser --system --shell /bin/bash --home /opt/minecraft --group minecraft`
-
-#### Get the (free) Minecraft Server .jar
-
-Download the server from [https://www.minecraft.net/en-us/download/server/](https://www.minecraft.net/en-us/download/server/).
-
-Move the downloaded `server.jar` file to `/opt/minecraft/server/server.jar`
-
-```
-$ sudo mkdir /opt/minecraft/server
-$ sudo mv server.jar /opt/minecraft/server/
+```bash
+docker-compose down
 ```
 
-#### Fix up the permissions
+This safely shuts down your world and saves all player progress.
 
-Make sure permissions are ok:
+## How to Delete a World
 
-`$ sudo chown -R minecraft.minecraft /opt/minecraft`
+⚠️ **Warning:** This permanently deletes all builds, items, and player data!
 
-#### Switch to the minecraft user
+```bash
+# Stop the world first
+docker-compose down
 
-If you start the server as `root` but then later try to run it as the `minecraft` user, it will give you hard-to-diagnose errors (personal experience).  Switch to the `minecraft` user for the next part:
-
-`$ sudo su minecraft`
-
-#### Generate the game files
-
-You are going to temporarily start the server so that you are prompted to accept the EULA, and so the game can create the necessary config files:
-
-```
-$ cd /opt/minecraft/server
-$ java -Xmx2048M -Xms256M -jar server.jar nogui
+# Delete all world data
+docker-compose down -v
 ```
 
-It will say you haven't agreed to the EULA.  Edit `eula.txt` (which now appears in the directory with `server.jar`) and set `eula=true`, and then try again.
+## How to Backup a World
 
-Once you've accepted the EULA, the server should start.  When you see a message that includes `[Server thread/INFO]: Done`, you'll know you've done it right.
+### Quick Backup
 
-At this point, type `stop` to shut it down gracefully.  You should now have a directory full of files, including `server.properties`, `whitelist.json`, `banned-ips.json`, `banned-players.json`, and `ops.json`.
-
-#### Edit `server.properties`
-
-In your text editor, open `server.properties`.  This is where you choose the difficulty level, the game mode, etc.  Edit [whatever settings you like](https://minecraft.gamepedia.com/Server.properties).  However, please pay attention to these ones:
-
-```
-white-list=true
-pvp=false				# your call on this, but this definitely helps keep the peace...
-server-ip=<your server's IP> # Change this to match your server's IP
-server-port=<your game's port, unique for each game> # Change this from the default
-enable-rcon=true
-rcon.port=<a unique port for each game, NOT same as server-port> # Change this from the default, but different from server-port
-rcon.password=<an admin password you choose, same for each game>
+```bash
+# Create a backup file with today's date (replace "my-minecraft-server" with your LEVEL_NAME)
+docker run --rm -v minecraft-server-hosting_my-minecraft-server-data:/data -v "$(pwd)":/backup ubuntu tar czf /backup/my-world-backup-$(date +%Y%m%d).tar.gz -C /data .
 ```
 
-#### Set up your systemd file
+### Restore from Backup
 
-Copy [minecraft@.service](minecraft\@.service) into `/etc/systemd/system/`
+```bash
+# Stop the world first
+docker-compose down
 
-#### Install mcrcon
+# Restore from backup file (replace "my-minecraft-server" with your LEVEL_NAME)
+docker run --rm -v minecraft-server-hosting_my-minecraft-server-data:/data -v "$(pwd)":/backup ubuntu tar xzf /backup/my-world-backup-YYYYMMDD.tar.gz -C /data
 
-`mcrcon` is a utility for managing Minecraft servers.  Here's how you install it:
-
-```
-$ sudo apt-get install gcc git make
-$ cd /opt/minecraft
-$ git clone https://github.com/Tiiffi/mcrcon
-$ cd mcrcon
-$ make
-$ sudo make install
+# Start the world again
+docker-compose up -d
 ```
 
-#### Configure mcrcon
+## How to Create a New World
 
-Copy [mcrcon.conf](mcrcon.conf) to `/etc/mcrcon.conf`.
+### Option 1: Different World Name (keeps old world)
 
-Note that <serverdirectory> is case sensitive.  So, for example, if you've set up a server in `/opt/minecraft/server` and `/opt/minecraft/server/server.properties` includes `rcon.port=26002`, your `/etc/mcrcon.conf` would need this line: `server=26002`
+1. **Edit your world settings:**
 
-#### Start the service
+   ```bash
+   nano .env  # Linux/Mac
+   notepad .env  # Windows
+   ```
 
-At this point, you should be ready to start the service.
+2. **Change the world name:**
 
-```
-$ sudo systemctl start minecraft@server
-```
+   ```bash
+   LEVEL_NAME=my-new-world
+   ```
 
-#### Check if it's running
+3. **Restart to create the new world:**
 
-Remember when you set `server-ip` and `server-port` in `server.properties`?  You need those now.
+   ```bash
+   docker-compose down
+   docker-compose up -d
+   ```
 
-Start up Minecraft Java Edition, go to Multiplayer and add a new server.  The address will be: `<server-ip>:<server-port>` (matching what you set in `server.properties` for that game).
+### Option 2: Fresh Start (deletes old world)
 
-If you can connect, congratulations, your server is running!  Now you need to make it available to the rest of the world.
+```bash
+# Stop and delete current world
+docker-compose down -v
 
-#### Make it a permanent service
-
-To make it a permanent service that restarts upon failure, run: `systemctl enable minecraft@server`.
-
-#### Put it on a schedule
-
-Yeah, seriously.  Do this so your kids aren't waking up at the crack of dawn to play.  It seriously works, they'll stay in bed longer if they know it won't even work.
-
-`$ sudo crontab -e`
-
-Copy and paste these lines into the crontab:
-
-```
-0 8 * * * systemctl start minecraft@server
-0 20 * * * systemctl stop minecraft@server
+# Start fresh
+docker-compose up -d
 ```
 
-Save the new crontab (and your sanity in the process).
+## How to Run Multiple Worlds at the Same Time
 
-#### Set up dynamic DNS
+You can run different types of worlds simultaneously! Here's how to set up multiple worlds:
 
-Use whatever service you like to set this.  You'll need to send this to parents so they can configure their client.
+### Example: Survival + Creative Worlds
 
-#### Open a port in your firewall (unless your players are all on your network)
+1. **Create settings for your creative world:**
 
-Open the port which matches `server-port` in `server.properties` and point it to your Minecraft server's IP.  You don't (and shouldn't) open the port used for `rcon.port`.
+   ```bash
+   cp .env.example .env.creative
+   ```
 
-#### Add the `manage.sh` script to the game directory
+2. **Edit `.env.creative` for creative mode:**
 
-Copy [manage.sh](manage.sh) into your game directory (e.g., `/opt/minecraft/server`).  When you want to manage a running game without logging in, you can do this:
+   ```bash
+   # Give it a unique world name and port
+   LEVEL_NAME=creative-world
+   SERVER_PORT=25566
+   RCON_PORT=25576
+   
+   # Creative world settings
+   GAMEMODE=creative
+   DIFFICULTY=peaceful
+   PVP=false
+   MOTD=Creative Building Server
+   ```
 
+3. **Create a second docker-compose file:**
+
+   ```bash
+   cp docker-compose.yml docker-compose.creative.yml
+   ```
+
+4. **Edit `docker-compose.creative.yml` to use the creative settings:**
+
+   ```yaml
+   services:
+     minecraft-server:
+       env_file:
+         - .env.creative
+       ports:
+         - "25566:25565"  # Different port
+         - "25576:25575"  # Different RCON port
+       volumes:
+         - creative-world-data:/opt/minecraft/server
+   
+   volumes:
+     creative-world-data:
+   ```
+
+5. **Start both worlds:**
+
+   ```bash
+   # Start survival world (port 25565)
+   docker-compose up -d
+   
+   # Start creative world (port 25566)  
+   docker-compose -f docker-compose.creative.yml up -d
+   ```
+
+6. **Connect to different worlds:**
+   - **Survival:** `<your-ip>:25565`
+   - **Creative:** `<your-ip>:25566`
+
+### Example: Multiple Themed Worlds
+
+You can create as many worlds as you want:
+
+```bash
+# Mini-games world
+cp .env.example .env.minigames
+# Edit: LEVEL_NAME=minigames-hub, SERVER_PORT=25567, etc.
+
+# Hardcore world  
+cp .env.example .env.hardcore
+# Edit: LEVEL_NAME=hardcore-survival, SERVER_PORT=25568, HARDCORE=true, etc.
+
+# Start all worlds
+docker-compose up -d                                           # Main world
+docker-compose -f docker-compose.creative.yml up -d            # Creative  
+docker-compose -f docker-compose.minigames.yml up -d           # Mini-games
+docker-compose -f docker-compose.hardcore.yml up -d            # Hardcore
 ```
-$ cd /opt/minecraft/server
-$ ./manage.sh
+
+## Customizing Your World
+
+### Easy Settings (.env file)
+
+Edit your `.env` file to customize your world:
+
+```bash
+# World basics
+LEVEL_NAME=my-awesome-world
+MOTD=Welcome to My Server!
+MAX_PLAYERS=10
+
+# Gameplay
+GAMEMODE=survival          # survival, creative, adventure, spectator
+DIFFICULTY=normal          # peaceful, easy, normal, hard
+HARDCORE=false            # true = permanent death
+PVP=true                  # true = players can fight each other
+
+# World generation
+LEVEL_TYPE=minecraft:normal    # normal, flat, large_biomes, etc.
+LEVEL_SEED=12345678           # Leave empty for random
+
+# Server behavior  
+SPAWN_PROTECTION=16       # Blocks around spawn where only ops can build
+VIEW_DISTANCE=10          # How far players can see (higher = more lag)
 ```
 
-This allows you to [run commands](https://minecraft.gamepedia.com/index.php?title=Commands#List_and_summary_of_commands).  At the very least, you should make your own player operator:
+Apply changes by restarting your world:
 
-```
-> op <yourplayername>
-> Q
-```
-
-## What if I want to run multiple servers?
-
-The beauty of this approach is that it scales easily.  To add a second server, do the following:
-
-1. Make a copy of your server:
-
-   `cp -r /opt/minecraft/server /opt/minecraft/second_server`
-
-1. Delete the game directory from the copy. It's in `server.properties`, look for `level-name=` and delete that subdirectory. This causes the server to generate a new game upon restart.
-
-1. Edit `server-port` and `rcon.port` in `/opt/minecraft/second_server/server.properties` to be something different from that in `server`.
-
-1. Add the new values into `/etc/mcrcon.conf` (e.g., `second_server=<rcon.port>`)
-
-1. Start the new server:
-
-   `sudo systemctl start minecraft@second_server`
-
-1. Ensure the new server starts when the system starts:
-
-   `sudo systemctl enable minecraft@second_server`
-
-1. Add another firewall rule opening the new `server-port`
-
-If you want to keep your operators, players, and banned players the same across the games, you can symlink them.
-
-For example, if you have `/opt/minecraft/server` and `/opt/minecraft/second_server`:
-
-```
-$ sudo systemctl stop minecraft@second_server
-$ cd /opt/minecraft/second_server
-$ rm ops.json whitelist.json banned-players.json banned-ips.json
-$ ln -s ../server/ops.json
-$ ln -s ../server/whitelist.json
-$ ln -s ../server/banned-players.json
-$ ln -s ../server/banned-ips.json
-$ sudo systemctl start minecraft@second_server
+```bash
+docker-compose down
+docker-compose up -d
 ```
 
-When you change these files, you'll need to restart the servers with symlink'd configs so they pick up the change.
+### Advanced Settings
 
-## Other tips
+For fine-grained control, you can access all Minecraft server settings through the `.env` file. See `.env.example` for the complete list of available options.
 
-### Make nightly backups
+## Managing Your World
 
-When you shut down the server for the night, back up the game files. Young kids may not fully understand multiplayer etiquette yet, and you might want the ability to roll back to a prior day's version if someone is griefed badly.
+### View Server Logs
 
-### Make a PDF you can send to parents with the current connection info
+```bash
+# See what's happening in your world
+docker-compose logs -f
 
-When a parent emails you with their username requesting access to the server, you'll probably want to respond with a PDF (with screenshots) showing how to add the servers you've configured.  Remember they'll need to know your dynamic DNS domain and the port numbers.
+# See recent activity
+docker-compose logs --tail=20
+```
 
-## I found an error...
+### Run Admin Commands
 
-If you found an error in the above instructions, please open an issue or a PR.  If you have a different set of instructions for a different distro or OS, feel free to PR them as a separate file.
+1. **Connect to your world's console:**
 
-If you run into a problem you can't solve, please feel free to open an Issue.  I can't promise I can diagnose it, but maybe someone else can.
+   ```bash
+   docker exec -it $(docker-compose ps -q) mcrcon -H localhost -P 25575 -p minecraft
+   ```
+
+2. **Make yourself an admin:**
+
+   ```text
+   op YourPlayerName
+   ```
+
+3. **Other useful commands:**
+
+   ```text
+   list                    # See who's online
+   weather clear           # Clear weather
+   time set day           # Set time to day
+   gamemode creative YourPlayerName  # Change player's game mode
+   teleport YourPlayerName ~ ~10 ~   # Teleport player up 10 blocks
+   ```
+
+4. **Exit console:**
+
+   ```text
+   quit
+   ```
+
+### Check World Performance
+
+```bash
+# See memory and CPU usage
+docker stats $(docker-compose ps -q)
+
+# See server status
+docker ps
+```
+
+## Connecting to Your World
+
+### Local Network (Friends at Your House)
+
+1. **Find your computer's IP address:**
+   - **Windows:** Open Command Prompt, type `ipconfig`
+   - **Mac:** System Preferences → Network
+   - **Linux:** Terminal, type `ip addr`
+
+2. **In Minecraft Java Edition:**
+   - Multiplayer → Add Server
+   - Server Address: `192.168.1.xxx:25565` (replace xxx with your IP)
+
+### Internet Access (Friends from Anywhere)
+
+1. **Forward port 25565 in your router** to your computer
+   - Log into your router's admin page
+   - Find "Port Forwarding" or "Virtual Servers"
+   - Forward external port 25565 to your computer's IP:25565
+
+2. **Find your external IP:** Visit [whatismyipaddress.com](https://whatismyipaddress.com)
+
+3. **Share with friends:** `your-external-ip:25565`
+
+⚠️ **Security Note:** Opening ports to the internet has security implications. Only do this if you understand the risks.
+
+## Common Issues & Solutions
+
+### "Connection refused" Error
+
+- **Check if world is running:** `docker ps`
+- **Check firewall:** Ensure port 25565 is allowed
+- **Windows networks:** Change from Public to Private network in Settings
+
+### World Won't Start
+
+```bash
+# Check what went wrong
+docker-compose logs
+
+# Try rebuilding
+docker-compose down
+docker-compose up -d --build
+```
+
+### Out of Memory
+
+```bash
+# Edit .env file to increase memory
+MEMORY_MAX=4G
+
+# Restart world
+docker-compose down
+docker-compose up -d
+```
+
+### Can't Connect from Same Computer
+
+Use `localhost:25565` instead of your IP address.
+
+## File Locations & Advanced Access
+
+### Access Your World Files Directly
+
+```bash
+# Open a terminal inside your world
+docker exec -it $(docker-compose ps -q) bash
+
+# List world files
+docker exec $(docker-compose ps -q) ls -la /opt/minecraft/server/
+
+# Copy files out (e.g., for external map viewers)
+docker cp $(docker-compose ps -q):/opt/minecraft/server/world ./world-backup
+```
+
+### Included Management Scripts
+
+- **Windows:** `minecraft-docker.ps1` - PowerShell management script
+- **Linux/Mac:** `start-server.sh` - Bash management script
+
+## Getting Help
+
+### Quick Diagnostics
+
+```bash
+# Is your world running?
+docker ps
+
+# What's in the logs?
+docker-compose logs --tail=50
+
+# What's the server saying?
+docker exec -it $(docker-compose ps -q) mcrcon -H localhost -P 25575 -p minecraft
+```
+
+### Reset Everything (⚠️ Deletes All Worlds)
+
+```bash
+docker-compose down -v
+docker system prune -f
+```
+
+## Advanced Setup Options
+
+If you need more control, performance, or want to run on a dedicated Linux server without Docker, check out the **[Advanced Linux Setup →](advanced/README.md)**
+
+The advanced setup provides:
+
+- **Maximum performance** (no container overhead)
+- **Native Linux systemd integration** with scheduling
+- **Template-based multi-server management**
+- **Advanced security configurations**
+- **Production-ready deployment options**
+
+**Best for:** Dedicated servers, advanced users, or production deployments where maximum performance is required.
+
+## License & Contributing
+
+This project is open source and available under the MIT License.
+
+- Feel free to submit issues, improvements, or additional features
+- Both basic and advanced approaches are actively maintained
+- Star the repo if you find it helpful! ⭐
+
+---
+
+**Happy crafting!**

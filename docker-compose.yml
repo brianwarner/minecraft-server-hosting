@@ -1,0 +1,41 @@
+services:
+  minecraft-server:
+    build: .
+    container_name: ${LEVEL_NAME:-world}
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${SERVER_PORT:-25565}:25565"  # Minecraft server port
+      - "${RCON_PORT:-25575}:25575"    # RCON port
+    volumes:
+      - ${LEVEL_NAME:-world}-data:/opt/minecraft/server
+    networks:
+      - minecraft-network
+
+  # Optional: Multiple servers example
+  minecraft-server-2:
+    build: .
+    container_name: minecraft-server-creative
+    restart: unless-stopped
+    env_file:
+      - .env.server2  # Use a separate env file for second server
+    ports:
+      - "25566:25565"  # Different external port
+      - "25576:25575"  # Different RCON port
+    volumes:
+      - minecraft-server-creative-data:/opt/minecraft/server
+    networks:
+      - minecraft-network
+    profiles:
+      - multi-server  # This server only starts when specifically requested
+
+networks:
+  minecraft-network:
+    driver: bridge
+
+volumes:
+  # Dynamic volume names based on world names
+  my-minecraft-server-data:  # Matches LEVEL_NAME=my-minecraft-server
+  world-data:  # Default fallback volume
+  minecraft-server-creative-data:  # Creative server volume
